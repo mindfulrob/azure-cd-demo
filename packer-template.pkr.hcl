@@ -42,7 +42,14 @@ build {
 
   provisioner "shell" {
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'"
-    inline          = ["apt-get update", "apt-get upgrade -y", "apt-get -y install nginx", "/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"]
+    inline          = [
+      "echo set debconf to Noninteractive", 
+      "echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-selections",
+      "apt-get update",
+      "apt-get upgrade -y",
+      "apt-get -y install nginx",
+      "/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"
+    ]
     inline_shebang  = "/bin/sh -x"
   }
 
