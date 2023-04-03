@@ -1,0 +1,60 @@
+name: Blue Green Deploy Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      ami:
+        description: 'AMI ID to deploy'
+        required: false
+        type: string
+  push:
+    branches:
+      - main
+
+env:
+  ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{  secrets.ARM_CLIENT_SECRET  }}
+  ARM_SUBSCRIPTION_ID: ${{  secrets.ARM_SUBSCRIPTION_ID  }}
+  ARM_TENANT_ID: ${{  secrets.ARM_TENANT_ID  }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Build
+      run: echo "Building..."
+    - name: Unit test
+      run: echo "Running unit tests..."
+  packer:
+    runs-on: ubuntu-latest
+    needs: build
+    outputs:
+      ami: ${{ steps.set_ami.outputs.ami }}
+      region: ${{ steps.set_ami.outputs.region }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup Packer
+      uses: hashicorp-contrib/setup-packer@v2
+    - name: Run Packer
+      run: packer build -var "client_id=${{ secrets.ARM_CLIENT_ID }}" -var "client_secret=${{ secrets.ARM_CLIENT_SECRET }}" -var "tenant_id=${{ secrets.ARM_TENANT_ID }}" -var "subscription_id=${{ secrets.ARM_SUBSCRIPTION_ID }}" packer-template.hcl
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: manifest
+        path: packer-manifest.json
+    - name: Set AMI
+      id: set_ami
+      run: |
+        # if packer-manifest.json file exists, read it
+        if [ -f ./packer-manifest.json ]; then
+            content=`cat ./packer-manifest.json`
+            amiRegion=`jq -r '.builds[0].artifact_id' < ./packer-manifest.json`
+            ami=${amiRegion#*:}
+            region=${amiRegion%:*}
+            echo "ami=$ami" >> $GITHUB_OUTPUT
+            echo "region=$region" >> $GITHUB_OUTPUT
+        else
+            echo "Using AMI ${{ github.event.inputs.ami }} from workflow_dispatch input"
+            echo "ami=${{ github.event.inputs.ami }}" >> $GITHUB_OUTPUT
+            echo "region=us-west-2" >> $GITHUB_OUTPUT
+        fi
