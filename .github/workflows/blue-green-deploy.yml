@@ -36,7 +36,7 @@ jobs:
     - name: Setup Packer
       uses: hashicorp-contrib/setup-packer@v2
     - name: Run Packer
-      run: packer build -var "client_id=${{ secrets.ARM_CLIENT_ID }}" -var "client_secret=${{ secrets.ARM_CLIENT_SECRET }}" -var "tenant_id=${{ secrets.ARM_TENANT_ID }}" -var "subscription_id=${{ secrets.ARM_SUBSCRIPTION_ID }}" packer-template.hcl
+      run: packer build -var "client_id=${{ secrets.ARM_CLIENT_ID }}" -var "client_secret=${{ secrets.ARM_CLIENT_SECRET }}" -var "tenant_id=${{ secrets.ARM_TENANT_ID }}" -var "subscription_id=${{ secrets.ARM_SUBSCRIPTION_ID }}" packer-template.pkr.hcl
     - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
