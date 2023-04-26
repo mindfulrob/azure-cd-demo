@@ -62,11 +62,12 @@ build {
     inline_shebang  = "/bin/sh -x"
   }
 
-}
-
-post-processor "manifest" {
+  post-processor "manifest" {
     output = "packer-manifest.json"
     custom_data = {
       location = var.location
     }
+  }
 }
+
+
